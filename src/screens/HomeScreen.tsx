@@ -10,6 +10,9 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  Modal,
+  Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +21,7 @@ interface SearchResult {
   term: string;
   summary: string;
   imageUrl?: string;
+  isFavorite?: boolean;
 }
 
 const HomeScreen = () => {
@@ -26,10 +30,13 @@ const HomeScreen = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [blockedWords, setBlockedWords] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
 
   useEffect(() => {
     loadHistory();
+    loadFavorites();
   }, []);
 
   useFocusEffect(
@@ -70,6 +77,17 @@ const HomeScreen = () => {
     }
   };
 
+  const loadFavorites = async () => {
+    try {
+      const storedFavorites = await AsyncStorage.getItem('favorites');
+      if (storedFavorites) {
+        setFavorites(JSON.parse(storedFavorites));
+      }
+    } catch (err) {
+      console.error('Failed to load favorites:', err);
+    }
+  };
+
   const saveHistory = async () => {
     try {
       await AsyncStorage.setItem('searchHistory', JSON.stringify(results));
@@ -78,12 +96,29 @@ const HomeScreen = () => {
     }
   };
 
+  const saveFavorites = async (newFavorites: SearchResult[]) => {
+    try {
+      await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
+      setFavorites(newFavorites);
+    } catch (error) {
+      console.error('Failed to save favorites:', error);
+    }
+  };
+
+  const toggleFavorite = (item: SearchResult) => {
+    const exists = favorites.find((fav) => fav.term === item.term);
+    const updatedFavorites = exists
+      ? favorites.filter((fav) => fav.term !== item.term)
+      : [item, ...favorites];
+    saveFavorites(updatedFavorites);
+  };
+
   const fetchSummary = async (term: string) => {
     const normalizedTerm = term.toLowerCase().trim();
 
     if (blockedWords.includes(normalizedTerm)) {
-      Alert.alert('Blocked Search', 'This search is not allowed.');
       setSearchTerm('');
+      setShowBlockedModal(true);
       return;
     }
 
@@ -145,7 +180,12 @@ const HomeScreen = () => {
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.resultItem}>
-            <Text style={styles.resultTitle}>🔎 {item.term}</Text>
+            <View style={styles.rowBetween}>
+              <Text style={styles.resultTitle}>🔎 {item.term}</Text>
+              <TouchableOpacity onPress={() => toggleFavorite(item)}>
+                <Text style={{ fontSize: 22 }}>{favorites.find(f => f.term === item.term) ? '❤️' : '🤍'}</Text>
+              </TouchableOpacity>
+            </View>
             {item.imageUrl && (
               <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
             )}
@@ -160,6 +200,25 @@ const HomeScreen = () => {
         title="Parent Settings"
         onPress={() => navigation.navigate('ParentSettings')}
       />
+
+      <Modal
+        visible={showBlockedModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowBlockedModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>🚫 Search Blocked</Text>
+            <Text style={styles.modalMessage}>
+              That search isn’t allowed. Try something fun like dinosaurs or space!
+            </Text>
+            <Pressable style={styles.modalButton} onPress={() => setShowBlockedModal(false)}>
+              <Text style={styles.modalButtonText}>Okay!</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -207,5 +266,42 @@ const styles = StyleSheet.create({
   },
   spacer: {
     height: 30,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    margin: 40,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#e91e63',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });

@@ -1,80 +1,107 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
+// src/screens/FavoritesScreen.tsx
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type FavoriteItem = {
+interface SearchResult {
   term: string;
   summary: string;
-  imageUrl: string | null;
-};
+  imageUrl?: string;
+}
 
-type FavoritesScreenProps = {
-  favorites: FavoriteItem[];
-};
+const FavoritesScreen = () => {
+  const [favorites, setFavorites] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default function FavoritesScreen({ favorites }: FavoritesScreenProps) {
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('favorites');
+        if (stored) {
+          setFavorites(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error('Failed to load favorites:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Your Favorites ❤️</Text>
-
-      {favorites.length === 0 ? (
-        <Text style={styles.empty}>No favorites saved yet.</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#e91e63" />
+      ) : favorites.length === 0 ? (
+        <Text style={styles.emptyText}>No favorites yet. Tap the 🤍 to save something!</Text>
       ) : (
         <FlatList
           data={favorites}
-          keyExtractor={(item) => item.term}
+          keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <View style={styles.resultItem}>
+              <Text style={styles.resultTitle}>🔎 {item.term}</Text>
               {item.imageUrl && (
-                <Image source={{ uri: item.imageUrl }} style={styles.image} />
+                <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
               )}
-              <Text style={styles.term}>{item.term}</Text>
-              <Text style={styles.summary}>{item.summary}</Text>
+              <Text style={styles.resultSummary}>{item.summary}</Text>
             </View>
           )}
         />
       )}
     </View>
   );
-}
+};
+
+export default FavoritesScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     paddingTop: 60,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontSize: 26,
     textAlign: 'center',
-  },
-  empty: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 50,
-    color: '#888',
-  },
-  card: {
     marginBottom: 20,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
-    paddingBottom: 10,
   },
-  term: {
+  resultItem: {
+    backgroundColor: '#fefefe',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    elevation: 2,
+  },
+  resultTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  summary: {
-    fontSize: 14,
-    color: '#333',
+  resultSummary: {
+    fontSize: 16,
   },
-  image: {
+  resultImage: {
     width: '100%',
     height: 180,
-    borderRadius: 10,
-    marginBottom: 10,
+    resizeMode: 'contain',
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 18,
+    textAlign: 'center',
+    color: 'gray',
+    marginTop: 20,
   },
 });
