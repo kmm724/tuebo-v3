@@ -1,14 +1,47 @@
 // src/screens/ParentSettings.tsx
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+  FlatList,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const ParentSettings = () => {
   const [pin, setPin] = useState('');
   const [accessGranted, setAccessGranted] = useState(false);
+  const [blockedWord, setBlockedWord] = useState('');
+  const [blockedWords, setBlockedWords] = useState<string[]>([]);
   const correctPIN = '1234';
   const navigation = useNavigation();
+
+  useEffect(() => {
+    loadBlockedWords();
+  }, []);
+
+  const loadBlockedWords = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('blockedWords');
+      if (stored) {
+        setBlockedWords(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error('Error loading blocked words:', err);
+    }
+  };
+
+  const saveBlockedWords = async (words: string[]) => {
+    try {
+      await AsyncStorage.setItem('blockedWords', JSON.stringify(words));
+    } catch (err) {
+      console.error('Error saving blocked words:', err);
+    }
+  };
 
   const handleSubmit = () => {
     if (pin === correctPIN) {
@@ -38,6 +71,16 @@ const ParentSettings = () => {
     }
   };
 
+  const handleAddBlockedWord = () => {
+    const word = blockedWord.trim().toLowerCase();
+    if (word && !blockedWords.includes(word)) {
+      const updated = [word, ...blockedWords];
+      setBlockedWords(updated);
+      saveBlockedWords(updated);
+      setBlockedWord('');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {!accessGranted ? (
@@ -56,7 +99,27 @@ const ParentSettings = () => {
       ) : (
         <>
           <Text style={styles.title}>Parent Access Granted</Text>
+
           <Button title="Clear Search History" onPress={clearHistory} />
+
+          <View style={styles.section}>
+            <Text style={styles.subtitle}>Blocked Words</Text>
+            <TextInput
+              style={styles.input}
+              value={blockedWord}
+              onChangeText={setBlockedWord}
+              placeholder="Enter word or phrase to block"
+            />
+            <Button title="Add to Block List" onPress={handleAddBlockedWord} />
+            <FlatList
+              data={blockedWords}
+              keyExtractor={(item, index) => index.toString()}
+              renderItem={({ item }) => (
+                <Text style={styles.blockedItem}>🚫 {item}</Text>
+              )}
+            />
+          </View>
+
           <View style={{ height: 20 }} />
           <Button title="Back to Home" onPress={() => navigation.goBack()} />
         </>
@@ -78,10 +141,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  subtitle: {
+    fontSize: 20,
+    marginVertical: 10,
+    fontWeight: 'bold',
+  },
   input: {
     borderWidth: 1,
     padding: 10,
     marginBottom: 12,
-    fontSize: 20,
+    fontSize: 18,
+    borderRadius: 6,
+  },
+  section: {
+    marginTop: 30,
+  },
+  blockedItem: {
+    fontSize: 16,
+    paddingVertical: 4,
   },
 });

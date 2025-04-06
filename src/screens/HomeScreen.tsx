@@ -9,8 +9,9 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SearchResult {
@@ -21,13 +22,27 @@ interface SearchResult {
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [blockedWords, setBlockedWords] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadHistory();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadBlockedWords();
+    }, [])
+  );
+
+  useEffect(() => {
+    if (route.params?.cleared) {
+      setResults([]);
+    }
+  }, [route.params]);
 
   useEffect(() => {
     saveHistory();
@@ -44,6 +59,17 @@ const HomeScreen = () => {
     }
   };
 
+  const loadBlockedWords = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('blockedWords');
+      if (stored) {
+        setBlockedWords(JSON.parse(stored));
+      }
+    } catch (err) {
+      console.error('Failed to load blocked words:', err);
+    }
+  };
+
   const saveHistory = async () => {
     try {
       await AsyncStorage.setItem('searchHistory', JSON.stringify(results));
@@ -54,6 +80,13 @@ const HomeScreen = () => {
 
   const fetchSummary = async (term: string) => {
     const normalizedTerm = term.toLowerCase().trim();
+
+    if (blockedWords.includes(normalizedTerm)) {
+      Alert.alert('Blocked Search', 'This search is not allowed.');
+      setSearchTerm('');
+      return;
+    }
+
     const alreadyExists = results.some(
       (item) => item.term.toLowerCase().trim() === normalizedTerm
     );
