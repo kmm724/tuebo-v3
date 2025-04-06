@@ -8,6 +8,7 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface SearchResult {
   term: string;
   summary: string;
+  imageUrl?: string;
 }
 
 const HomeScreen = () => {
@@ -51,6 +53,15 @@ const HomeScreen = () => {
   };
 
   const fetchSummary = async (term: string) => {
+    const normalizedTerm = term.toLowerCase().trim();
+    const alreadyExists = results.some(
+      (item) => item.term.toLowerCase().trim() === normalizedTerm
+    );
+    if (alreadyExists) {
+      setSearchTerm('');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await fetch(
@@ -58,23 +69,25 @@ const HomeScreen = () => {
       );
       const data = await response.json();
 
-      if (data.extract) {
-        setResults([{ term, summary: data.extract }, ...results]);
-      } else {
-        setResults([{ term, summary: 'No summary found.' }, ...results]);
-      }
+      const newResult: SearchResult = {
+        term,
+        summary: data.extract || 'No summary found.',
+        imageUrl: data.thumbnail?.source || undefined,
+      };
+
+      setResults([newResult, ...results]);
     } catch (error) {
       console.error('Error fetching summary:', error);
       setResults([{ term, summary: 'Something went wrong.' }, ...results]);
     } finally {
       setLoading(false);
+      setSearchTerm('');
     }
   };
 
   const handleSearch = () => {
     if (searchTerm.trim()) {
-      fetchSummary(searchTerm.trim());
-      setSearchTerm('');
+      fetchSummary(searchTerm);
     }
   };
 
@@ -100,6 +113,9 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <View style={styles.resultItem}>
             <Text style={styles.resultTitle}>🔎 {item.term}</Text>
+            {item.imageUrl && (
+              <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
+            )}
             <Text style={styles.resultSummary}>{item.summary}</Text>
           </View>
         )}
@@ -148,6 +164,13 @@ const styles = StyleSheet.create({
   },
   resultSummary: {
     fontSize: 16,
+  },
+  resultImage: {
+    width: '100%',
+    height: 180,
+    resizeMode: 'contain',
+    borderRadius: 6,
+    marginBottom: 8,
   },
   spacer: {
     height: 30,
