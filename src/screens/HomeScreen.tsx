@@ -1,169 +1,155 @@
-import React, { useState } from 'react';
+// src/screens/HomeScreen.tsx
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Button,
   StyleSheet,
+  TextInput,
   FlatList,
   ActivityIndicator,
-  Button,
-  Alert,
 } from 'react-native';
-import axios from 'axios';
-import SearchBar from '../components/SearchBar';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type HomeScreenProps = {
-  favorites: { term: string; summary: string; imageUrl: string | null }[];
-  setFavorites: React.Dispatch<
-    React.SetStateAction<
-      { term: string; summary: string; imageUrl: string | null }[]
-    >
-  >;
-  history: string[];
-  setHistory: React.Dispatch<React.SetStateAction<string[]>>;
-};
+interface SearchResult {
+  term: string;
+  summary: string;
+}
 
-type SearchResultItem = {
-  title: string;
-  snippet: string;
-  pageid: number;
-};
-
-export default function HomeScreen({
-  favorites,
-  setFavorites,
-  history,
-  setHistory,
-}: HomeScreenProps) {
+const HomeScreen = () => {
+  const navigation = useNavigation();
   const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState<SearchResultItem[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSearch = async (term: string) => {
-    setSearchTerm(term);
-    setError('');
-    setLoading(true);
-    setResults([]);
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
+  useEffect(() => {
+    saveHistory();
+  }, [results]);
+
+  const loadHistory = async () => {
     try {
-      const response = await axios.get(
-        `https://en.wikipedia.org/w/api.php?origin=*&action=query&list=search&format=json&srsearch=${encodeURIComponent(
-          term
-        )}`
-      );
-
-      const searchResults = response.data.query.search;
-
-      const formattedResults = searchResults.map((item: any) => ({
-        title: item.title,
-        snippet: item.snippet.replace(/<[^>]+>/g, ''),
-        pageid: item.pageid,
-      }));
-
-      setResults(formattedResults);
-
-      if (formattedResults.length > 0) {
-        console.log('📚 Adding to history:', term);
-        setHistory((prev) => [...prev, term]);
+      const storedResults = await AsyncStorage.getItem('searchHistory');
+      if (storedResults) {
+        setResults(JSON.parse(storedResults));
       }
-    } catch (err) {
-      setError('Something went wrong. Try another word!');
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    }
+  };
+
+  const saveHistory = async () => {
+    try {
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(results));
+    } catch (error) {
+      console.error('Failed to save history:', error);
+    }
+  };
+
+  const fetchSummary = async (term: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`
+      );
+      const data = await response.json();
+
+      if (data.extract) {
+        setResults([{ term, summary: data.extract }, ...results]);
+      } else {
+        setResults([{ term, summary: 'No summary found.' }, ...results]);
+      }
+    } catch (error) {
+      console.error('Error fetching summary:', error);
+      setResults([{ term, summary: 'Something went wrong.' }, ...results]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveToFavorites = (item: SearchResultItem) => {
-    const alreadyExists = favorites.some(
-      (fav) => fav.term.toLowerCase() === item.title.toLowerCase()
-    );
-
-    if (alreadyExists) {
-      Alert.alert('Already Saved', `"${item.title}" is already in your favorites.`);
-      return;
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      fetchSummary(searchTerm.trim());
+      setSearchTerm('');
     }
-
-    const newFavorite = {
-      term: item.title,
-      summary: item.snippet,
-      imageUrl: null,
-    };
-
-    setFavorites((prev) => [...prev, newFavorite]);
-    Alert.alert('Saved!', `"${item.title}" has been added to your favorites.`);
   };
-
-  const renderItem = ({ item }: { item: SearchResultItem }) => (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.snippet}>{item.snippet}</Text>
-      <View style={styles.buttonContainer}>
-        <Button title="Save to Favorites ❤️" onPress={() => handleSaveToFavorites(item)} />
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
-      <SearchBar onSearch={handleSearch} />
-      <Text style={styles.header}>Welcome to TUEBO! 🚀</Text>
+      <Text style={styles.title}>Welcome to TUEBO</Text>
 
-      {loading && <ActivityIndicator size="large" color="#888" style={{ marginTop: 20 }} />}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Type something to learn about..."
+        value={searchTerm}
+        onChangeText={setSearchTerm}
+        onSubmitEditing={handleSearch}
+        returnKeyType="search"
+      />
+      <Button title="Search" onPress={handleSearch} />
+
+      {loading && <ActivityIndicator size="large" color="#e91e63" style={{ marginTop: 20 }} />}
 
       <FlatList
         data={results}
-        keyExtractor={(item) => item.pageid.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.resultItem}>
+            <Text style={styles.resultTitle}>🔎 {item.term}</Text>
+            <Text style={styles.resultSummary}>{item.summary}</Text>
+          </View>
+        )}
+      />
+
+      <View style={styles.spacer} />
+
+      <Button
+        title="Parent Settings"
+        onPress={() => navigation.navigate('ParentSettings')}
       />
     </View>
   );
-}
+};
+
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     paddingTop: 60,
-    backgroundColor: '#f9faff',
-    paddingHorizontal: 16,
-  },
-  header: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 16,
-    color: '#333',
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#222',
-    marginBottom: 8,
-  },
-  snippet: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 20,
-  },
-  error: {
-    fontSize: 16,
-    color: 'red',
-    marginVertical: 10,
+    fontSize: 28,
+    marginBottom: 20,
     textAlign: 'center',
   },
-  buttonContainer: {
-    marginTop: 12,
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 10,
+    fontSize: 18,
+  },
+  resultItem: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+  },
+  resultTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  resultSummary: {
+    fontSize: 16,
+  },
+  spacer: {
+    height: 30,
   },
 });
