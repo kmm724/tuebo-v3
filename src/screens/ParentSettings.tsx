@@ -1,13 +1,13 @@
 // src/screens/ParentSettings.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
 const ParentSettings = () => {
   const [pin, setPin] = useState('');
   const [accessGranted, setAccessGranted] = useState(false);
   const correctPIN = '1234';
-
   const navigation = useNavigation();
 
   const handleSubmit = () => {
@@ -17,6 +17,25 @@ const ParentSettings = () => {
       Alert.alert('Incorrect PIN', 'Please try again.');
     }
     setPin('');
+  };
+
+  const clearHistory = async () => {
+    try {
+      await AsyncStorage.removeItem('searchHistory');
+      Alert.alert('History Cleared', 'The child’s search history has been erased.', [
+        {
+          text: 'OK',
+          onPress: () =>
+            navigation.navigate('MainTabs', {
+              screen: 'Search',
+              params: { cleared: true },
+            }),
+        },
+      ]);
+    } catch (error) {
+      console.error('Failed to clear history:', error);
+      Alert.alert('Error', 'Failed to clear history.');
+    }
   };
 
   return (
@@ -37,6 +56,8 @@ const ParentSettings = () => {
       ) : (
         <>
           <Text style={styles.title}>Parent Access Granted</Text>
+          <Button title="Clear Search History" onPress={clearHistory} />
+          <View style={{ height: 20 }} />
           <Button title="Back to Home" onPress={() => navigation.goBack()} />
         </>
       )}
