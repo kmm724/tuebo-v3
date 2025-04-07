@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   PermissionsAndroid,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -168,6 +169,7 @@ const HomeScreen = () => {
     } finally {
       setLoading(false);
       setSearchTerm('');
+      Keyboard.dismiss();
     }
   };
 
@@ -178,11 +180,11 @@ const HomeScreen = () => {
   };
 
   const startListening = async () => {
-  Alert.alert(
-    'Voice Search Coming Soon!',
-    'We’re working hard to add real voice search. Try typing your search instead!'
-  );
-};
+    Alert.alert(
+      'Voice Search Coming Soon!',
+      'We’re working hard to add real voice search. Try typing your search instead!'
+    );
+  };
 
   return (
     <View style={styles.container}>
