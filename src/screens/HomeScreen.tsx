@@ -13,9 +13,13 @@ import {
   Modal,
   Pressable,
   TouchableOpacity,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Speech from 'expo-speech';
+import Voice from '@react-native-voice/voice';
 
 interface SearchResult {
   term: string;
@@ -33,6 +37,7 @@ const HomeScreen = () => {
   const [favorites, setFavorites] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
     loadHistory();
@@ -54,6 +59,19 @@ const HomeScreen = () => {
   useEffect(() => {
     saveHistory();
   }, [results]);
+
+  useEffect(() => {
+    Voice.onSpeechStart = () => setIsListening(true);
+    Voice.onSpeechEnd = () => setIsListening(false);
+    Voice.onSpeechResults = (event) => {
+      const spokenText = event.value[0];
+      setSearchTerm(spokenText);
+      fetchSummary(spokenText);
+    };
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, []);
 
   const loadHistory = async () => {
     try {
@@ -159,6 +177,13 @@ const HomeScreen = () => {
     }
   };
 
+  const startListening = async () => {
+  Alert.alert(
+    'Voice Search Coming Soon!',
+    'We’re working hard to add real voice search. Try typing your search instead!'
+  );
+};
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to TUEBO</Text>
@@ -172,6 +197,10 @@ const HomeScreen = () => {
         returnKeyType="search"
       />
       <Button title="Search" onPress={handleSearch} />
+
+      <TouchableOpacity style={styles.micButton} onPress={startListening}>
+        <Text style={styles.micText}>{isListening ? '🎙️ Listening...' : '🎤 Tap to Speak'}</Text>
+      </TouchableOpacity>
 
       {loading && <ActivityIndicator size="large" color="#e91e63" style={{ marginTop: 20 }} />}
 
@@ -241,6 +270,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
+    fontSize: 18,
+  },
+  micButton: {
+    alignSelf: 'center',
+    backgroundColor: '#e91e63',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  micText: {
+    color: 'white',
     fontSize: 18,
   },
   resultItem: {

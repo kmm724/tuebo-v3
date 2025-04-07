@@ -1,14 +1,16 @@
 // src/screens/FavoritesScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
+  FlatList,
   Image,
-  ActivityIndicator,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface SearchResult {
   term: string;
@@ -18,45 +20,53 @@ interface SearchResult {
 
 const FavoritesScreen = () => {
   const [favorites, setFavorites] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const stored = await AsyncStorage.getItem('favorites');
-        if (stored) {
-          setFavorites(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error('Failed to load favorites:', error);
-      } finally {
-        setLoading(false);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
+
+  const loadFavorites = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) {
+        setFavorites(JSON.parse(stored));
       }
-    };
+    } catch (error) {
+      console.error('Error loading favorites:', error);
+    }
+  };
 
-    loadFavorites();
-  }, []);
+  const removeFavorite = async (term: string) => {
+    const updated = favorites.filter((item) => item.term !== term);
+    setFavorites(updated);
+    await AsyncStorage.setItem('favorites', JSON.stringify(updated));
+  };
+
+  const renderItem = ({ item }: { item: SearchResult }) => (
+    <View style={styles.resultItem}>
+      <View style={styles.rowBetween}>
+        <Text style={styles.resultTitle}>⭐ {item.term}</Text>
+        <TouchableOpacity onPress={() => removeFavorite(item.term)}>
+          <Text style={styles.removeText}>❌</Text>
+        </TouchableOpacity>
+      </View>
+      {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />}
+      <Text style={styles.resultSummary}>{item.summary}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Favorites ❤️</Text>
-      {loading ? (
-        <ActivityIndicator size="large" color="#e91e63" />
-      ) : favorites.length === 0 ? (
-        <Text style={styles.emptyText}>No favorites yet. Tap the 🤍 to save something!</Text>
+      <Text style={styles.title}>Your Favorite Topics</Text>
+      {favorites.length === 0 ? (
+        <Text style={styles.emptyText}>💤 You haven’t added any favorites yet!</Text>
       ) : (
         <FlatList
           data={favorites}
           keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.resultItem}>
-              <Text style={styles.resultTitle}>🔎 {item.term}</Text>
-              {item.imageUrl && (
-                <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
-              )}
-              <Text style={styles.resultSummary}>{item.summary}</Text>
-            </View>
-          )}
+          renderItem={renderItem}
         />
       )}
     </View>
@@ -72,16 +82,21 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   title: {
-    fontSize: 26,
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 50,
   },
   resultItem: {
-    backgroundColor: '#fefefe',
+    backgroundColor: '#f0f0f0',
     borderRadius: 8,
     padding: 12,
     marginBottom: 10,
-    elevation: 2,
   },
   resultTitle: {
     fontSize: 18,
@@ -98,10 +113,13 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginBottom: 8,
   },
-  emptyText: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: 'gray',
-    marginTop: 20,
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  removeText: {
+    fontSize: 20,
+    color: 'red',
   },
 });
