@@ -8,7 +8,6 @@ import {
   Image,
   TouchableOpacity,
   Alert,
-  Keyboard,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -48,7 +47,7 @@ const FavoritesScreen = () => {
   const renderItem = ({ item }: { item: SearchResult }) => (
     <View style={styles.resultItem}>
       <View style={styles.rowBetween}>
-        <Text style={styles.resultTitle}>⭐ {item.term}</Text>
+        <Text style={styles.resultTitle}>🌟 {item.term}</Text>
         <TouchableOpacity onPress={() => removeFavorite(item.term)}>
           <Text style={styles.removeText}>❌</Text>
         </TouchableOpacity>
@@ -60,7 +59,7 @@ const FavoritesScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Your Favorite Topics</Text>
+      <Text style={styles.title}>🌈 Your Favorite Topics</Text>
       {favorites.length === 0 ? (
         <Text style={styles.emptyText}>💤 You haven’t added any favorites yet!</Text>
       ) : (
@@ -81,37 +80,42 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingTop: 60,
+    backgroundColor: '#FFF8E1',
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#FB8500',
   },
   emptyText: {
     fontSize: 18,
     textAlign: 'center',
     marginTop: 50,
+    color: '#888',
   },
   resultItem: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: '#E0F7FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
   resultTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
+    color: '#006D77',
   },
   resultSummary: {
     fontSize: 16,
+    color: '#333',
   },
   resultImage: {
     width: '100%',
     height: 180,
     resizeMode: 'contain',
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 8,
   },
   rowBetween: {
@@ -120,7 +124,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   removeText: {
-    fontSize: 20,
-    color: 'red',
+    fontSize: 24,
+    color: '#E63946',
   },
 });

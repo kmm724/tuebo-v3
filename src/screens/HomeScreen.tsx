@@ -181,30 +181,32 @@ const HomeScreen = () => {
 
   const startListening = async () => {
     Alert.alert(
-      'Voice Search Coming Soon!',
+      '🎤 Voice Search Coming Soon!',
       'We’re working hard to add real voice search. Try typing your search instead!'
     );
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to TUEBO</Text>
+      <Text style={styles.title}>🌟 Welcome to TUEBO! 🌟</Text>
 
       <TextInput
         style={styles.searchInput}
-        placeholder="Type something to learn about..."
+        placeholder="🔍 Type something to learn about..."
         value={searchTerm}
         onChangeText={setSearchTerm}
         onSubmitEditing={handleSearch}
         returnKeyType="search"
       />
-      <Button title="Search" onPress={handleSearch} />
+      <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+        <Text style={styles.searchButtonText}>Go!</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.micButton} onPress={startListening}>
         <Text style={styles.micText}>{isListening ? '🎙️ Listening...' : '🎤 Tap to Speak'}</Text>
       </TouchableOpacity>
 
-      {loading && <ActivityIndicator size="large" color="#e91e63" style={{ marginTop: 20 }} />}
+      {loading && <ActivityIndicator size="large" color="#FFB703" style={{ marginTop: 20 }} />}
 
       <FlatList
         data={results}
@@ -212,9 +214,9 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <View style={styles.resultItem}>
             <View style={styles.rowBetween}>
-              <Text style={styles.resultTitle}>🔎 {item.term}</Text>
+              <Text style={styles.resultTitle}>📚 {item.term}</Text>
               <TouchableOpacity onPress={() => toggleFavorite(item)}>
-                <Text style={{ fontSize: 22 }}>{favorites.find(f => f.term === item.term) ? '❤️' : '🤍'}</Text>
+                <Text style={{ fontSize: 24 }}>{favorites.find(f => f.term === item.term) ? '🌟' : '☆'}</Text>
               </TouchableOpacity>
             </View>
             {item.imageUrl && (
@@ -227,10 +229,9 @@ const HomeScreen = () => {
 
       <View style={styles.spacer} />
 
-      <Button
-        title="Parent Settings"
-        onPress={() => navigation.navigate('ParentSettings')}
-      />
+      <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('ParentSettings')}>
+        <Text style={styles.settingsButtonText}>👩‍👧 Parent Settings</Text>
+      </TouchableOpacity>
 
       <Modal
         visible={showBlockedModal}
@@ -261,25 +262,42 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingTop: 60,
+    backgroundColor: '#FFF8E1',
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
+    fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#FB8500',
   },
   searchInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
+    borderWidth: 2,
+    borderColor: '#FFD166',
+    borderRadius: 12,
+    padding: 12,
     marginBottom: 10,
     fontSize: 18,
+    backgroundColor: '#fff',
+  },
+  searchButton: {
+    backgroundColor: '#FFB703',
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   micButton: {
     alignSelf: 'center',
-    backgroundColor: '#e91e63',
+    backgroundColor: '#219EBC',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 20,
     marginVertical: 10,
   },
   micText: {
@@ -287,24 +305,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   resultItem: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: '#E0F7FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
   resultTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 6,
+    color: '#006D77',
   },
   resultSummary: {
     fontSize: 16,
+    color: '#333',
   },
   resultImage: {
     width: '100%',
     height: 180,
     resizeMode: 'contain',
-    borderRadius: 6,
+    borderRadius: 8,
     marginBottom: 8,
   },
   spacer: {
@@ -314,6 +334,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  settingsButton: {
+    backgroundColor: '#FFB703',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  settingsButtonText: {
+    fontSize: 18,
+    color: 'white',
+    fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,
@@ -331,6 +362,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#E63946',
   },
   modalMessage: {
     fontSize: 16,
@@ -338,7 +370,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalButton: {
-    backgroundColor: '#e91e63',
+    backgroundColor: '#FB8500',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,

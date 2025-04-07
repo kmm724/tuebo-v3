@@ -1,185 +1,117 @@
-// src/screens/HomeScreen.tsx
-import React, { useState, useEffect } from 'react';
+// src/screens/HistoryScreen.tsx
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  Button,
   StyleSheet,
-  TextInput,
   FlatList,
-  ActivityIndicator,
-  Image,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
-interface SearchResult {
-  term: string;
-  summary: string;
-  imageUrl?: string;
-}
+const HistoryScreen = () => {
+  const [history, setHistory] = useState<string[]>([]);
 
-const HomeScreen = () => {
-  const navigation = useNavigation();
-  const route = useRoute();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    loadHistory();
-  }, []);
-
-  useEffect(() => {
-    if (route.params?.cleared) {
-      setResults([]);
-    }
-  }, [route.params]);
-
-  useEffect(() => {
-    saveHistory();
-  }, [results]);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadHistory();
+    }, [])
+  );
 
   const loadHistory = async () => {
     try {
-      const storedResults = await AsyncStorage.getItem('searchHistory');
-      if (storedResults) {
-        setResults(JSON.parse(storedResults));
+      const stored = await AsyncStorage.getItem('history');
+      if (stored) {
+        setHistory(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Failed to load history:', error);
+      console.error('Error loading history:', error);
     }
   };
 
-  const saveHistory = async () => {
-    try {
-      await AsyncStorage.setItem('searchHistory', JSON.stringify(results));
-    } catch (error) {
-      console.error('Failed to save history:', error);
-    }
-  };
-
-  const fetchSummary = async (term: string) => {
-    const normalizedTerm = term.toLowerCase().trim();
-    const alreadyExists = results.some(
-      (item) => item.term.toLowerCase().trim() === normalizedTerm
-    );
-    if (alreadyExists) {
-      setSearchTerm('');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`
-      );
-      const data = await response.json();
-
-      const newResult: SearchResult = {
-        term,
-        summary: data.extract || 'No summary found.',
-        imageUrl: data.thumbnail?.source || undefined,
-      };
-
-      setResults([newResult, ...results]);
-    } catch (error) {
-      console.error('Error fetching summary:', error);
-      setResults([{ term, summary: 'Something went wrong.' }, ...results]);
-    } finally {
-      setLoading(false);
-      setSearchTerm('');
-    }
-  };
-
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      fetchSummary(searchTerm);
-    }
+  const clearHistory = async () => {
+    Alert.alert('Clear All?', 'Do you want to delete your entire search history?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear All',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.removeItem('history');
+          setHistory([]);
+        },
+      },
+    ]);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to TUEBO</Text>
-
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Type something to learn about..."
-        value={searchTerm}
-        onChangeText={setSearchTerm}
-        onSubmitEditing={handleSearch}
-        returnKeyType="search"
-      />
-      <Button title="Search" onPress={handleSearch} />
-
-      {loading && <ActivityIndicator size="large" color="#e91e63" style={{ marginTop: 20 }} />}
-
-      <FlatList
-        data={results}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.resultItem}>
-            <Text style={styles.resultTitle}>🔎 {item.term}</Text>
-            {item.imageUrl && (
-              <Image source={{ uri: item.imageUrl }} style={styles.resultImage} />
-            )}
-            <Text style={styles.resultSummary}>{item.summary}</Text>
-          </View>
-        )}
-      />
-
-      <View style={styles.spacer} />
-
-      <Button
-        title="Parent Settings"
-        onPress={() => navigation.navigate('ParentSettings')}
-      />
+      <Text style={styles.title}>📚 Your Search History</Text>
+      {history.length === 0 ? (
+        <Text style={styles.emptyText}>💤 Nothing here yet!</Text>
+      ) : (
+        <FlatList
+          data={history}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.historyItem}>
+              <Text style={styles.historyText}>🔎 {item}</Text>
+            </View>
+          )}
+        />
+      )}
+      {history.length > 0 && (
+        <TouchableOpacity style={styles.clearButton} onPress={clearHistory}>
+          <Text style={styles.clearButtonText}>🗑 Clear All</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
 
-export default HomeScreen;
+export default HistoryScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     paddingTop: 60,
+    backgroundColor: '#FFF8E1',
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
+    fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#FB8500',
   },
-  searchInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
+  emptyText: {
     fontSize: 18,
+    textAlign: 'center',
+    marginTop: 50,
+    color: '#888',
   },
-  resultItem: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
+  historyItem: {
+    backgroundColor: '#E0F7FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
-  resultTitle: {
+  historyText: {
     fontSize: 18,
+    color: '#006D77',
+  },
+  clearButton: {
+    marginTop: 20,
+    backgroundColor: '#FFB703',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: 'white',
     fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  resultSummary: {
-    fontSize: 16,
-  },
-  resultImage: {
-    width: '100%',
-    height: 180,
-    resizeMode: 'contain',
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  spacer: {
-    height: 30,
   },
 });
