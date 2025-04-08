@@ -10,6 +10,7 @@ import FavoritesScreen from './src/screens/FavoritesScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import ParentSettings from './src/screens/ParentSettings';
+import VideoExplorer from './src/screens/VideoExplorer';
 
 import { loadData, saveData } from './src/utils/storage';
 
@@ -92,6 +93,7 @@ export default function App() {
         <Stack.Screen name="HistoryScreen">
           {() => <HistoryScreen history={history} />}
         </Stack.Screen>
+        <Stack.Screen name="VideoExplorer" component={VideoExplorer} />
       </Stack.Navigator>
     </NavigationContainer>
   );
