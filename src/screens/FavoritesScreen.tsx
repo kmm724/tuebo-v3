@@ -6,19 +6,28 @@ import {
   FlatList,
   StyleSheet,
   Image,
+  Button,
+  TouchableOpacity,
 } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
-import { loadData } from '../utils/storage';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { loadData, saveData } from '../utils/storage';
 
 const FavoritesScreen = () => {
   const [favorites, setFavorites] = useState([]);
   const isFocused = useIsFocused();
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (isFocused) {
       loadData('favorites', []).then(setFavorites);
     }
   }, [isFocused]);
+
+  const handleRemove = (term) => {
+    const updated = favorites.filter((item) => item.term !== term);
+    setFavorites(updated);
+    saveData('favorites', updated);
+  };
 
   return (
     <View style={styles.container}>
@@ -34,10 +43,14 @@ const FavoritesScreen = () => {
               {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
               <Text style={styles.title}>{item.term}</Text>
               <Text style={styles.summary}>{item.summary}</Text>
+              <Button title="❌ Remove" color="#d9534f" onPress={() => handleRemove(item.term)} />
             </View>
           )}
         />
       )}
+      <TouchableOpacity style={styles.homeButton} onPress={() => navigation.navigate('Search')}>
+        <Text style={styles.homeButtonText}>🏠 Back to Home</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -85,5 +98,18 @@ const styles = StyleSheet.create({
   summary: {
     fontSize: 14,
     color: '#555',
+    marginBottom: 8,
+  },
+  homeButton: {
+    marginTop: 20,
+    backgroundColor: '#FFB703',
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  homeButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });

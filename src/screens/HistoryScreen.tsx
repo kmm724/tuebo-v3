@@ -1,71 +1,45 @@
-// src/screens/HistoryScreen.tsx
-import React, { useState } from 'react';
+// HistoryScreen.tsx
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
+  StyleSheet,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { loadData } from '../utils/storage';
 
-const HistoryScreen = () => {
-  const [history, setHistory] = useState<string[]>([]);
+const HistoryScreen = ({ history: initialHistory }) => {
+  const [history, setHistory] = useState([]);
+  const isFocused = useIsFocused();
+  const navigation = useNavigation();
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadHistory();
-    }, [])
-  );
-
-  const loadHistory = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('history');
-      if (stored) {
-        setHistory(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error('Error loading history:', error);
+  useEffect(() => {
+    if (isFocused) {
+      loadData('history', []).then(setHistory);
     }
-  };
-
-  const clearHistory = async () => {
-    Alert.alert('Clear All?', 'Do you want to delete your entire search history?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Clear All',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.removeItem('history');
-          setHistory([]);
-        },
-      },
-    ]);
-  };
+  }, [isFocused]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📚 Your Search History</Text>
+      <Text style={styles.header}>🕘 Search History</Text>
       {history.length === 0 ? (
-        <Text style={styles.emptyText}>💤 Nothing here yet!</Text>
+        <Text style={styles.emptyText}>No search history found.</Text>
       ) : (
         <FlatList
           data={history}
-          keyExtractor={(item, index) => index.toString()}
+          keyExtractor={(item, index) => `${item}-${index}`}
           renderItem={({ item }) => (
-            <View style={styles.historyItem}>
-              <Text style={styles.historyText}>🔎 {item}</Text>
+            <View style={styles.itemBox}>
+              <Text style={styles.itemText}>🔎 {item}</Text>
             </View>
           )}
         />
       )}
-      {history.length > 0 && (
-        <TouchableOpacity style={styles.clearButton} onPress={clearHistory}>
-          <Text style={styles.clearButtonText}>🗑 Clear All</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity style={styles.homeButton} onPress={() => navigation.goBack()}>
+        <Text style={styles.homeButtonText}>🔙 Back to Parent Tools</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -75,43 +49,42 @@ export default HistoryScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 60,
     backgroundColor: '#FFF8E1',
+    padding: 20,
   },
-  title: {
-    fontSize: 26,
+  header: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#FB8500',
     marginBottom: 20,
     textAlign: 'center',
-    color: '#FB8500',
   },
   emptyText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginTop: 50,
+    fontSize: 16,
     color: '#888',
+    textAlign: 'center',
+    marginTop: 20,
   },
-  historyItem: {
-    backgroundColor: '#E0F7FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+  itemBox: {
+    backgroundColor: '#FFECB3',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
   },
-  historyText: {
-    fontSize: 18,
-    color: '#006D77',
+  itemText: {
+    fontSize: 16,
+    color: '#333',
   },
-  clearButton: {
+  homeButton: {
     marginTop: 20,
     backgroundColor: '#FFB703',
-    paddingVertical: 12,
+    padding: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
-  clearButtonText: {
+  homeButtonText: {
     fontSize: 18,
-    color: 'white',
     fontWeight: 'bold',
+    color: 'white',
   },
 });
