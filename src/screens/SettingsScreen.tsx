@@ -1,69 +1,67 @@
+// src/screens/SettingsScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function SettingsScreen() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const SettingsScreen = () => {
   const [pin, setPin] = useState('');
+  const navigation = useNavigation();
 
-  const correctPin = '1234'; // You can change this later!
-
-  const handleLogin = () => {
-    if (pin === correctPin) {
-      setIsAuthenticated(true);
+  const handleAccess = () => {
+    if (pin === '1234') {
+      navigation.navigate('ParentSettings', { fromPIN: true });
     } else {
-      Alert.alert('Incorrect PIN', 'That’s not the right code!');
+      Alert.alert('Access Denied', 'The PIN you entered is incorrect.');
     }
+    setPin('');
   };
 
   return (
     <View style={styles.container}>
-      {!isAuthenticated ? (
-        <>
-          <Text style={styles.title}>Parents Only 🔒</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter PIN"
-            secureTextEntry
-            keyboardType="numeric"
-            value={pin}
-            onChangeText={setPin}
-          />
-          <Button title="Enter" onPress={handleLogin} />
-        </>
-      ) : (
-        <>
-          <Text style={styles.title}>Settings ⚙️</Text>
-          <Text style={styles.message}>You’re in the grown-up zone!</Text>
-          {/* More settings can go here later */}
-        </>
-      )}
+      <Text style={styles.title}>🔒 Enter Parent PIN</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Enter PIN"
+        secureTextEntry
+        keyboardType="number-pad"
+        value={pin}
+        onChangeText={setPin}
+      />
+      <Button title="Submit" onPress={handleAccess} color="#FB8500" />
     </View>
   );
-}
+};
+
+export default SettingsScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
+    justifyContent: 'center',
+    padding: 30,
+    backgroundColor: '#FFF8E1',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
     marginBottom: 20,
+    textAlign: 'center',
+    color: '#FB8500',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#FFD166',
+    borderRadius: 10,
     padding: 12,
     fontSize: 18,
-    borderRadius: 10,
+    backgroundColor: '#fff',
     marginBottom: 20,
-  },
-  message: {
-    fontSize: 16,
-    textAlign: 'center',
   },
 });

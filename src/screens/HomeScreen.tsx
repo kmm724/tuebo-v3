@@ -229,7 +229,7 @@ const HomeScreen = () => {
 
       <View style={styles.spacer} />
 
-      <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('ParentSettings')}>
+      <TouchableOpacity style={styles.settingsButton} onPress={() => navigation.navigate('Settings')}>
         <Text style={styles.settingsButtonText}>👩‍👧 Parent Settings</Text>
       </TouchableOpacity>
 
@@ -265,44 +265,43 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8E1',
   },
   title: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
     color: '#FB8500',
   },
   searchInput: {
-    borderWidth: 2,
+    backgroundColor: '#fff',
     borderColor: '#FFD166',
+    borderWidth: 2,
     borderRadius: 12,
     padding: 12,
-    marginBottom: 10,
     fontSize: 18,
-    backgroundColor: '#fff',
+    marginBottom: 10,
   },
   searchButton: {
     backgroundColor: '#FFB703',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 10,
-    marginBottom: 10,
     alignItems: 'center',
+    marginBottom: 15,
   },
   searchButtonText: {
-    fontSize: 20,
-    color: '#fff',
+    color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
   },
   micButton: {
-    alignSelf: 'center',
     backgroundColor: '#219EBC',
-    paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
-    marginVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 20,
   },
   micText: {
-    color: 'white',
-    fontSize: 18,
+    color: '#fff',
+    fontSize: 16,
   },
   resultItem: {
     backgroundColor: '#E0F7FA',
@@ -313,56 +312,59 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: '#023047',
     marginBottom: 6,
-    color: '#006D77',
   },
   resultSummary: {
     fontSize: 16,
     color: '#333',
+    marginTop: 6,
   },
   resultImage: {
     width: '100%',
-    height: 180,
-    resizeMode: 'contain',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  spacer: {
-    height: 30,
+    height: 150,
+    resizeMode: 'cover',
+    borderRadius: 10,
+    marginTop: 10,
   },
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  spacer: {
+    height: 30,
+  },
   settingsButton: {
-    backgroundColor: '#FFB703',
+    backgroundColor: '#8ECAE6',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
+    marginTop: 10,
   },
   settingsButtonText: {
     fontSize: 18,
-    color: 'white',
     fontWeight: 'bold',
+    color: '#023047',
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContent: {
-    margin: 40,
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 16,
+    width: '80%',
     alignItems: 'center',
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: 'bold',
+    color: '#d00000',
     marginBottom: 10,
-    color: '#E63946',
   },
   modalMessage: {
     fontSize: 16,
@@ -371,12 +373,13 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     backgroundColor: '#FB8500',
-    paddingHorizontal: 20,
     paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 8,
   },
   modalButtonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
   },
 });

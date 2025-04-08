@@ -16,14 +16,13 @@ import { loadData, saveData } from './src/utils/storage';
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-function MainTabs({ favorites, setFavorites, history, setHistory }: any) {
+function MainTabs({ favorites, setFavorites, history, setHistory }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ color, size }) => {
           let iconName = 'home';
           if (route.name === 'Favorites') iconName = 'heart';
-          else if (route.name === 'History') iconName = 'time';
           else if (route.name === 'Settings') iconName = 'settings';
           return <Ionicons name={iconName as any} size={size} color={color} />;
         },
@@ -43,9 +42,6 @@ function MainTabs({ favorites, setFavorites, history, setHistory }: any) {
       </Tab.Screen>
       <Tab.Screen name="Favorites">
         {() => <FavoritesScreen favorites={favorites} />}
-      </Tab.Screen>
-      <Tab.Screen name="History">
-        {() => <HistoryScreen history={history} />}
       </Tab.Screen>
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
@@ -75,7 +71,6 @@ export default function App() {
 
   useEffect(() => {
     if (historyLoaded) {
-      console.log('🧠 History state changed:', history);
       saveData('history', history);
     }
   }, [history, historyLoaded]);
@@ -94,6 +89,9 @@ export default function App() {
           )}
         </Stack.Screen>
         <Stack.Screen name="ParentSettings" component={ParentSettings} />
+        <Stack.Screen name="HistoryScreen">
+          {() => <HistoryScreen history={history} />}
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );

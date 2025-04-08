@@ -1,26 +1,46 @@
 // src/screens/ParentSettings.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Button,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const ParentSettings = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  useEffect(() => {
+    if (!route?.params?.fromPIN) {
+      navigation.navigate('Settings');
+    }
+  }, [route]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>👩‍👧 Parent Access Granted</Text>
-      <Text style={styles.message}>
-        Here you’ll be able to manage blocked words, monitor search history, and more.
-      </Text>
+      <Text style={styles.title}>👩‍👧 Parent Tools</Text>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backButtonText}>⬅️ Back to Home</Text>
+      <TouchableOpacity
+        style={styles.toolButton}
+        onPress={() => navigation.navigate('HistoryScreen')}
+      >
+        <Text style={styles.toolButtonText}>🕵️ View Search History</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.toolButton, styles.disabledButton]}
+        onPress={() => {}}
+      >
+        <Text style={styles.toolButtonText}>🚫 Manage Blocked Words (coming soon)</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toolButton}
+        onPress={() => navigation.navigate('MainTabs')}
+      >
+        <Text style={styles.toolButtonText}>⬅️ Return to Home</Text>
       </TouchableOpacity>
     </View>
   );
@@ -36,27 +56,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8E1',
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 30,
     textAlign: 'center',
     color: '#FB8500',
   },
-  message: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 40,
-    color: '#444',
-  },
-  backButton: {
-    backgroundColor: '#219EBC',
-    paddingVertical: 12,
+  toolButton: {
+    backgroundColor: '#FFB703',
+    paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
+    marginBottom: 20,
   },
-  backButtonText: {
-    color: 'white',
+  toolButtonText: {
     fontSize: 18,
+    color: 'white',
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
 });
