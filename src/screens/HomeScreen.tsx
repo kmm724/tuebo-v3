@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet, Keyboard } from 'react-native';
+import { View, TextInput, Button, FlatList, Text, StyleSheet, Keyboard, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const API_KEY = 'AIzaSyB84VMq1SlOqk2Ul3hL8jjtXW5nR54cRXo';
+const SEARCH_ENGINE_ID = 'f73c36ac849f74759';
 
 type SearchResult = {
   title: string;
-  description: string;
+  snippet: string;
+  link: string;
 };
 
 const HomeScreen = () => {
@@ -14,10 +18,9 @@ const HomeScreen = () => {
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
-    Keyboard.dismiss(); // 🔒 Hide the keyboard after tapping search
+    Keyboard.dismiss();
 
     try {
-      // Save to search history quietly
       const existing = await AsyncStorage.getItem('searchHistory');
       const parsed = existing ? JSON.parse(existing) : [];
       const newHistory = [{ term: searchQuery }, ...parsed].slice(0, 10);
@@ -26,23 +29,23 @@ const HomeScreen = () => {
       console.error('Failed to save history:', error);
     }
 
-    // 💡 Generate fake results for now
-    const fakeResults: SearchResult[] = [
-      {
-        title: `About ${searchQuery}`,
-        description: `This is a kid-friendly summary of ${searchQuery}.`,
-      },
-      {
-        title: `${searchQuery} Facts`,
-        description: `Fun facts about ${searchQuery} you might enjoy!`,
-      },
-      {
-        title: `Explore ${searchQuery}`,
-        description: `Learn more about ${searchQuery} in a safe way.`,
-      },
-    ];
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${SEARCH_ENGINE_ID}&q=${encodeURIComponent(searchQuery)}`
+      );
+      const data = await response.json();
 
-    setResults(fakeResults);
+      const items: SearchResult[] = (data.items || []).map((item: any) => ({
+        title: item.title,
+        snippet: item.snippet,
+        link: item.link,
+      }));
+
+      setResults(items);
+    } catch (error) {
+      console.error('Failed to fetch search results:', error);
+    }
+
     setSearchQuery('');
   };
 
@@ -62,7 +65,13 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <View style={styles.resultCard}>
             <Text style={styles.resultTitle}>{item.title}</Text>
-            <Text style={styles.resultDescription}>{item.description}</Text>
+            <Text style={styles.resultDescription}>{item.snippet}</Text>
+            <Text
+              style={styles.resultLink}
+              onPress={() => Linking.openURL(item.link)}
+            >
+              Open Link
+            </Text>
           </View>
         )}
         ListEmptyComponent={
@@ -91,6 +100,7 @@ const styles = StyleSheet.create({
   },
   resultTitle: { fontSize: 18, fontWeight: 'bold' },
   resultDescription: { fontSize: 14, marginTop: 4 },
+  resultLink: { fontSize: 14, color: 'blue', marginTop: 8 },
   placeholder: { marginTop: 40, fontSize: 16, textAlign: 'center', color: '#888' },
 });
 
