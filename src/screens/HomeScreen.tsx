@@ -1,152 +1,97 @@
-// HomeScreen.tsx
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  Keyboard,
-  StyleSheet,
-} from 'react-native';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { saveData, loadData } from '../utils/storage';
+import React, { useState } from 'react';
+import { View, TextInput, Button, FlatList, Text, StyleSheet, Keyboard } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HomeScreen = ({ favorites, setFavorites, history, setHistory }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [results, setResults] = useState([]);
-  const navigation = useNavigation();
-  const isFocused = useIsFocused();
+type SearchResult = {
+  title: string;
+  description: string;
+};
 
-  // Load history from storage on focus
-  useEffect(() => {
-    if (isFocused) {
-      setResults([]);
-      loadData('history', []).then(setHistory);
-    }
-  }, [isFocused]);
+const HomeScreen = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
 
   const handleSearch = async () => {
-    if (searchTerm.trim() === '') return;
-    Keyboard.dismiss();
+    if (!searchQuery.trim()) return;
+
+    Keyboard.dismiss(); // 🔒 Hide the keyboard after tapping search
 
     try {
-      const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchTerm)}`);
-      const data = await response.json();
-      const resultItem = {
-        term: searchTerm,
-        summary: data.extract || `No summary found for ${searchTerm}`,
-        imageUrl: data.thumbnail?.source || null,
-      };
-      setResults([resultItem]);
-      const updatedHistory = [searchTerm, ...history];
-      setHistory(updatedHistory);
-      saveData('history', updatedHistory);
+      // Save to search history quietly
+      const existing = await AsyncStorage.getItem('searchHistory');
+      const parsed = existing ? JSON.parse(existing) : [];
+      const newHistory = [{ term: searchQuery }, ...parsed].slice(0, 10);
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(newHistory));
     } catch (error) {
-      setResults([{ term: searchTerm, summary: `Failed to fetch results. Please try again.`, imageUrl: null }]);
+      console.error('Failed to save history:', error);
     }
-  };
 
-  const handleFavorite = (item) => {
-    console.log('⭐ Attempting to favorite:', item);
-    if (!favorites.some((fav) => fav.term === item.term)) {
-      const updatedFavorites = [...favorites, item];
-      setFavorites(updatedFavorites);
-      saveData('favorites', updatedFavorites);
-      console.log('✅ Favorite added and saved:', item);
-    } else {
-      console.log('⚠️ Already favorited:', item.term);
-    }
+    // 💡 Generate fake results for now
+    const fakeResults: SearchResult[] = [
+      {
+        title: `About ${searchQuery}`,
+        description: `This is a kid-friendly summary of ${searchQuery}.`,
+      },
+      {
+        title: `${searchQuery} Facts`,
+        description: `Fun facts about ${searchQuery} you might enjoy!`,
+      },
+      {
+        title: `Explore ${searchQuery}`,
+        description: `Learn more about ${searchQuery} in a safe way.`,
+      },
+    ];
+
+    setResults(fakeResults);
+    setSearchQuery('');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔍 What do you want to learn about?</Text>
-
+      <Text style={styles.title}>Safe Search</Text>
       <TextInput
-        placeholder="Type a topic..."
-        value={searchTerm}
-        onChangeText={setSearchTerm}
         style={styles.input}
+        placeholder="Search for something..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
       />
-
       <Button title="Search" onPress={handleSearch} />
-
       <FlatList
         data={results}
-        keyExtractor={(item) => item.term}
+        keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => (
-          <View style={styles.resultItem}>
-            {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.image} />}
-            <Text style={styles.resultText}>{item.summary}</Text>
-            <Button title="⭐ Favorite" onPress={() => handleFavorite(item)} />
+          <View style={styles.resultCard}>
+            <Text style={styles.resultTitle}>{item.title}</Text>
+            <Text style={styles.resultDescription}>{item.description}</Text>
           </View>
         )}
-        style={{ marginTop: 20 }}
+        ListEmptyComponent={
+          <Text style={styles.placeholder}>Type a topic and tap search to begin!</Text>
+        }
       />
-
-      <TouchableOpacity
-        style={styles.videoButton}
-        onPress={() => navigation.navigate('VideoExplorer')}
-      >
-        <Text style={styles.videoButtonText}>🎥 Watch Videos</Text>
-      </TouchableOpacity>
     </View>
   );
 };
 
-export default HomeScreen;
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#FFF8E1',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#FB8500',
-    textAlign: 'center',
-  },
+  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   input: {
+    borderColor: '#ccc',
     borderWidth: 1,
-    borderColor: '#ddd',
     padding: 10,
-    borderRadius: 10,
-    backgroundColor: '#fff',
     marginBottom: 10,
-  },
-  resultItem: {
-    backgroundColor: '#FFECB3',
-    padding: 12,
     borderRadius: 8,
-    marginBottom: 10,
   },
-  resultText: {
-    fontSize: 16,
-    marginBottom: 6,
-  },
-  image: {
-    width: '100%',
-    height: 160,
-    resizeMode: 'cover',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  videoButton: {
-    backgroundColor: '#FFB703',
-    padding: 14,
+  resultCard: {
+    padding: 15,
+    backgroundColor: '#f0f8ff',
+    marginVertical: 8,
     borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 20,
   },
-  videoButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-  },
+  resultTitle: { fontSize: 18, fontWeight: 'bold' },
+  resultDescription: { fontSize: 14, marginTop: 4 },
+  placeholder: { marginTop: 40, fontSize: 16, textAlign: 'center', color: '#888' },
 });
+
+export default HomeScreen;

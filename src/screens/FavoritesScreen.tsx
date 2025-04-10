@@ -8,6 +8,7 @@ import {
   Image,
   Button,
   TouchableOpacity,
+  ToastAndroid,
 } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { loadData, saveData } from '../utils/storage';
@@ -27,13 +28,21 @@ const FavoritesScreen = () => {
     const updated = favorites.filter((item) => item.term !== term);
     setFavorites(updated);
     saveData('favorites', updated);
+    ToastAndroid.show(`❌ Removed ${term} from favorites`, ToastAndroid.SHORT);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>⭐ Your Favorite Topics</Text>
       {favorites.length === 0 ? (
-        <Text style={styles.emptyText}>You haven't added any favorites yet!</Text>
+        <View style={styles.emptyContainer}>
+          <Image
+            source={require('../../assets/mascot-search.png')}
+            style={styles.emptyImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.emptyText}>Your favorites list is empty. Tap a ⭐ to add topics!</Text>
+        </View>
       ) : (
         <FlatList
           data={favorites}
@@ -70,11 +79,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  emptyImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 20,
+  },
   emptyText: {
     fontSize: 16,
     color: '#888',
     textAlign: 'center',
-    marginTop: 20,
+    paddingHorizontal: 20,
   },
   card: {
     backgroundColor: '#FFECB3',

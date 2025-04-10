@@ -1,46 +1,55 @@
-// src/screens/ParentSettings.tsx
-import React, { useEffect } from 'react';
+// ParentSettings.tsx
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
+  ToastAndroid,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { saveData } from '../utils/storage';
 
-const ParentSettings = () => {
+const ParentSettings = ({ setHistory }) => {
   const navigation = useNavigation();
-  const route = useRoute();
 
-  useEffect(() => {
-    if (!route?.params?.fromPIN) {
-      navigation.navigate('Settings');
-    }
-  }, [route]);
+  const handleClearHistory = () => {
+    Alert.alert(
+      'Clear History',
+      'Are you sure you want to delete the entire search history?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Yes',
+          style: 'destructive',
+          onPress: () => {
+            saveData('history', []);
+            setHistory([]);
+            ToastAndroid.show('🧹 Search history cleared!', ToastAndroid.SHORT);
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>👩‍👧 Parent Tools</Text>
-
+      <Text style={styles.header}>🧩 Parent Tools</Text>
       <TouchableOpacity
-        style={styles.toolButton}
-        onPress={() => navigation.navigate('HistoryScreen')}
+        style={styles.button}
+        onPress={() => navigation.navigate('History')}
       >
-        <Text style={styles.toolButtonText}>🕵️ View Search History</Text>
+        <Text style={styles.buttonText}>📜 View Search History</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.toolButton, styles.disabledButton]}
-        onPress={() => {}}
-      >
-        <Text style={styles.toolButtonText}>🚫 Manage Blocked Words (coming soon)</Text>
+      <TouchableOpacity style={styles.button} onPress={handleClearHistory}>
+        <Text style={styles.buttonText}>🧹 Clear Search History</Text>
       </TouchableOpacity>
-
       <TouchableOpacity
-        style={styles.toolButton}
-        onPress={() => navigation.navigate('MainTabs')}
+        style={styles.button}
+        onPress={() => navigation.navigate('Search')}
       >
-        <Text style={styles.toolButtonText}>⬅️ Return to Home</Text>
+        <Text style={styles.buttonText}>🏠 Back to Home</Text>
       </TouchableOpacity>
     </View>
   );
@@ -51,30 +60,27 @@ export default ParentSettings;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 30,
-    justifyContent: 'center',
     backgroundColor: '#FFF8E1',
+    padding: 20,
+    justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
+  header: {
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 30,
-    textAlign: 'center',
     color: '#FB8500',
+    textAlign: 'center',
+    marginBottom: 30,
   },
-  toolButton: {
+  button: {
     backgroundColor: '#FFB703',
-    paddingVertical: 14,
+    padding: 14,
     borderRadius: 10,
+    marginVertical: 10,
     alignItems: 'center',
-    marginBottom: 20,
   },
-  toolButtonText: {
+  buttonText: {
     fontSize: 18,
-    color: 'white',
     fontWeight: 'bold',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
+    color: 'white',
   },
 });
