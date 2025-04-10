@@ -89,6 +89,7 @@ const HomeScreen = () => {
       }));
 
       setResults(items);
+      await AsyncStorage.setItem('searchResults', JSON.stringify(items));
     } catch (error) {
       console.error('Failed to fetch search results:', error);
     }
