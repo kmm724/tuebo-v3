@@ -1,5 +1,17 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet, Keyboard, Linking, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  TextInput,
+  Button,
+  FlatList,
+  Text,
+  StyleSheet,
+  Keyboard,
+  Linking,
+  Pressable,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -10,11 +22,44 @@ type SearchResult = {
   title: string;
   snippet: string;
   link: string;
+  imageUrl?: string;
 };
 
 const HomeScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) {
+        setFavorites(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+    }
+  };
+
+  const saveFavorites = async (newFavs: string[]) => {
+    try {
+      await AsyncStorage.setItem('favorites', JSON.stringify(newFavs));
+    } catch (error) {
+      console.error('Failed to save favorites:', error);
+    }
+  };
+
+  const toggleFavorite = (link: string) => {
+    const updated = favorites.includes(link)
+      ? favorites.filter(fav => fav !== link)
+      : [...favorites, link];
+    setFavorites(updated);
+    saveFavorites(updated);
+  };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -40,6 +85,7 @@ const HomeScreen = () => {
         title: item.title,
         snippet: item.snippet,
         link: item.link,
+        imageUrl: item.pagemap?.cse_image?.[0]?.src || '',
       }));
 
       setResults(items);
@@ -62,12 +108,23 @@ const HomeScreen = () => {
       <Button title="Go Explore!" onPress={handleSearch} color="#5cb85c" />
       <FlatList
         data={results}
-        keyExtractor={(_, index) => index.toString()}
+        keyExtractor={(item) => item.link}
         renderItem={({ item }) => (
           <View style={styles.resultCard}>
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} style={styles.resultImage} resizeMode="cover" />
+            ) : null}
             <View style={styles.resultHeader}>
               <Ionicons name="search" size={22} color="#007aff" style={styles.icon} />
               <Text style={styles.resultTitle}>{item.title}</Text>
+              <TouchableOpacity onPress={() => toggleFavorite(item.link)}>
+                <Ionicons
+                  name={favorites.includes(item.link) ? 'heart' : 'heart-outline'}
+                  size={favorites.includes(item.link) ? 26 : 22}
+                  color={favorites.includes(item.link) ? '#e63946' : '#555'}
+                  style={styles.heartIcon}
+                />
+              </TouchableOpacity>
             </View>
             <Text style={styles.resultDescription}>{item.snippet}</Text>
             <Pressable
@@ -115,6 +172,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  resultImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
   resultHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -122,6 +185,9 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 8,
+  },
+  heartIcon: {
+    marginLeft: 'auto',
   },
   resultTitle: { fontSize: 18, fontWeight: '600', flexShrink: 1, color: '#333' },
   resultDescription: { fontSize: 14, marginTop: 4, color: '#555' },
