@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, FlatList, Text, StyleSheet, Keyboard, Linking } from 'react-native';
+import { View, TextInput, Button, FlatList, Text, StyleSheet, Keyboard, Linking, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 const API_KEY = 'AIzaSyB84VMq1SlOqk2Ul3hL8jjtXW5nR54cRXo';
 const SEARCH_ENGINE_ID = 'f73c36ac849f74759';
@@ -64,14 +65,21 @@ const HomeScreen = () => {
         keyExtractor={(_, index) => index.toString()}
         renderItem={({ item }) => (
           <View style={styles.resultCard}>
-            <Text style={styles.resultTitle}>{item.title}</Text>
+            <View style={styles.resultHeader}>
+              <Ionicons name="search" size={20} color="#555" style={styles.icon} />
+              <Text style={styles.resultTitle}>{item.title}</Text>
+            </View>
             <Text style={styles.resultDescription}>{item.snippet}</Text>
-            <Text
-              style={styles.resultLink}
+            <Pressable
               onPress={() => Linking.openURL(item.link)}
+              android_ripple={{ color: '#d0e6ff' }}
+              style={({ pressed }) => [
+                styles.resultLink,
+                pressed && { opacity: 0.6 },
+              ]}
             >
-              Open Link
-            </Text>
+              <Text style={styles.resultLinkText}>Open Link</Text>
+            </Pressable>
           </View>
         )}
         ListEmptyComponent={
@@ -98,9 +106,29 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 10,
   },
-  resultTitle: { fontSize: 18, fontWeight: 'bold' },
+  resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  resultTitle: { fontSize: 18, fontWeight: 'bold', flexShrink: 1 },
   resultDescription: { fontSize: 14, marginTop: 4 },
-  resultLink: { fontSize: 14, color: 'blue', marginTop: 8 },
+  resultLink: {
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#cce5ff',
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  resultLinkText: {
+    fontSize: 14,
+    color: '#004080',
+    fontWeight: 'bold',
+  },
   placeholder: { marginTop: 40, fontSize: 16, textAlign: 'center', color: '#888' },
 });
 
