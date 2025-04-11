@@ -73,7 +73,7 @@ export default function FavoritesScreen() {
       ) : null}
       <View style={styles.headerRow}>
         <Text style={styles.title}>{item.title}</Text>
-        <TouchableOpacity onPress={() => toggleFavorite(item.link)}>
+        <TouchableOpacity onPress={() => toggleFavorite(item.link)} style={{ transform: [{ scale: 1 }], transition: 'transform 0.1s' }}>
           <Ionicons name="heart" size={24} color="#e63946" />
         </TouchableOpacity>
       </View>
@@ -109,10 +109,15 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     padding: 15,
-    borderRadius: 10,
-    marginBottom: 12,
-    borderColor: '#cce6ff',
+    borderRadius: 12,
+    marginBottom: 14,
     borderWidth: 1,
+    borderColor: '#cce6ff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -129,10 +134,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 10, color: '#333' },
   snippet: { fontSize: 14, color: '#555', marginBottom: 8 },
   linkButton: {
-    backgroundColor: '#d0f0ff',
-    padding: 8,
-    borderRadius: 6,
+    backgroundColor: '#5cbefc',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     alignSelf: 'flex-start',
+    shadowColor: '#007acc',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 1, height: 2 },
+    shadowRadius: 3,
+    elevation: 2,
   },
   linkText: { color: '#007acc', fontWeight: 'bold' },
   empty: { textAlign: 'center', color: '#888', marginTop: 40, fontSize: 16 },
