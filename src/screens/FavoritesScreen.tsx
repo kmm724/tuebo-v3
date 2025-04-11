@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -7,8 +8,10 @@ import {
   Image,
   StyleSheet,
   Linking,
+  TouchableOpacity,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 interface FavoriteItem {
   title: string;
@@ -20,24 +23,46 @@ interface FavoriteItem {
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
 
+  const isFocused = useIsFocused();
+
   useEffect(() => {
-    loadFavorites();
-  }, []);
+    if (isFocused) {
+      loadFavorites();
+    }
+  }, [isFocused]);
 
   const loadFavorites = async () => {
     try {
-      const data = await AsyncStorage.getItem('favorites');
-      if (data) {
-        const links: string[] = JSON.parse(data);
-        const storedItems = await AsyncStorage.getItem('searchResults');
-        if (storedItems) {
-          const allResults: FavoriteItem[] = JSON.parse(storedItems);
-          const filtered = allResults.filter((item) => links.includes(item.link));
-          setFavorites(filtered);
-        }
+      const storedItems = await AsyncStorage.getItem('favoriteDetails');
+      if (storedItems) {
+        const allResults: FavoriteItem[] = JSON.parse(storedItems);
+        setFavorites(allResults);
       }
     } catch (error) {
       console.error('Failed to load favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (link: string) => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      const current: string[] = stored ? JSON.parse(stored) : [];
+      const updated = current.includes(link)
+        ? current.filter((fav) => fav !== link)
+        : [...current, link];
+      await AsyncStorage.setItem('favorites', JSON.stringify(updated));
+
+      const storedDetails = await AsyncStorage.getItem('favoriteDetails');
+      let currentDetails: FavoriteItem[] = storedDetails ? JSON.parse(storedDetails) : [];
+
+      if (current.includes(link)) {
+        currentDetails = currentDetails.filter(item => item.link !== link);
+      }
+
+      await AsyncStorage.setItem('favoriteDetails', JSON.stringify(currentDetails));
+      loadFavorites();
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
     }
   };
 
@@ -46,7 +71,12 @@ export default function FavoritesScreen() {
       {item.imageUrl ? (
         <Image source={{ uri: item.imageUrl }} style={styles.image} />
       ) : null}
-      <Text style={styles.title}>{item.title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{item.title}</Text>
+        <TouchableOpacity onPress={() => toggleFavorite(item.link)}>
+          <Ionicons name="heart" size={24} color="#e63946" />
+        </TouchableOpacity>
+      </View>
       <Text style={styles.snippet}>{item.snippet}</Text>
       <Pressable
         onPress={() => Linking.openURL(item.link)}
@@ -84,13 +114,19 @@ const styles = StyleSheet.create({
     borderColor: '#cce6ff',
     borderWidth: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   image: {
     width: '100%',
     height: 180,
     borderRadius: 8,
     marginBottom: 8,
   },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 6, color: '#333' },
+  title: { fontSize: 18, fontWeight: 'bold', flex: 1, marginRight: 10, color: '#333' },
   snippet: { fontSize: 14, color: '#555', marginBottom: 8 },
   linkButton: {
     backgroundColor: '#d0f0ff',

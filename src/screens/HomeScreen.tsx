@@ -53,13 +53,37 @@ const HomeScreen = () => {
     }
   };
 
-  const toggleFavorite = (link: string) => {
-    const updated = favorites.includes(link)
+  const toggleFavorite = async (link: string) => {
+  try {
+    const isAlreadyFavorite = favorites.includes(link);
+    const updated = isAlreadyFavorite
       ? favorites.filter(fav => fav !== link)
       : [...favorites, link];
+
+    await AsyncStorage.setItem('favorites', JSON.stringify(updated));
     setFavorites(updated);
-    saveFavorites(updated);
-  };
+
+    const favDetailsRaw = await AsyncStorage.getItem('favoriteDetails');
+    const favDetails = favDetailsRaw ? JSON.parse(favDetailsRaw) : [];
+
+    if (isAlreadyFavorite) {
+      // Remove it from favoriteDetails
+      const filtered = favDetails.filter((item: SearchResult) => item.link !== link);
+      await AsyncStorage.setItem('favoriteDetails', JSON.stringify(filtered));
+    } else {
+      // Add the full result to favoriteDetails
+      const itemToAdd = results.find(r => r.link === link);
+      if (itemToAdd) {
+        const combined = [itemToAdd, ...favDetails].filter(
+          (item, index, self) => index === self.findIndex(i => i.link === item.link)
+        );
+        await AsyncStorage.setItem('favoriteDetails', JSON.stringify(combined));
+      }
+    }
+  } catch (error) {
+    console.error('Failed to toggle favorite:', error);
+  }
+};
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -89,7 +113,17 @@ const HomeScreen = () => {
       }));
 
       setResults(items);
-      await AsyncStorage.setItem('searchResults', JSON.stringify(items));
+      // Merge with previous search results
+      const existingResultsRaw = await AsyncStorage.getItem('searchResults');
+      const existingResults: SearchResult[] = existingResultsRaw ? JSON.parse(existingResultsRaw) : [];
+
+      // Combine and deduplicate by link
+      const combinedResults = [...items, ...existingResults].filter(
+        (item, index, self) => index === self.findIndex(i => i.link === item.link)
+      ).slice(0, 50); // Keep only the latest 50
+
+      await AsyncStorage.setItem('searchResults', JSON.stringify(combinedResults));
+      await loadFavorites();
     } catch (error) {
       console.error('Failed to fetch search results:', error);
     }
