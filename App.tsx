@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import HomeScreen from './src/screens/HomeScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
+import VideoSearchScreen from './src/screens/VideoSearchScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,6 +22,8 @@ export default function App() {
               iconName = focused ? 'home' : 'home-outline';
             } else if (route.name === 'Favorites') {
               iconName = focused ? 'heart' : 'heart-outline';
+            } else if (route.name === 'Videos') {
+              iconName = focused ? 'play-circle' : 'play-circle-outline';
             }
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -31,6 +34,7 @@ export default function App() {
       >
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Favorites" component={FavoritesScreen} />
+        <Tab.Screen name="Videos" component={VideoSearchScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
