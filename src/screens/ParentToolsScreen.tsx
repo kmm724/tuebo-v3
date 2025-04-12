@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,20 +6,45 @@ import {
   Button,
   StyleSheet,
   Alert,
+  FlatList,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ParentToolsScreen() {
   const [pin, setPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [history, setHistory] = useState([]);
   const correctPin = '1234'; // You can change this PIN as needed
 
   const handlePinSubmit = () => {
     if (pin === correctPin) {
       setIsAuthenticated(true);
+      loadSearchHistory();
     } else {
       Alert.alert('Incorrect PIN', 'Please try again.');
       setPin('');
     }
+  };
+
+  const loadSearchHistory = async () => {
+    try {
+      const data = await AsyncStorage.getItem('searchHistory');
+      if (data) {
+        const parsed = JSON.parse(data);
+        const termsOnly = parsed.map((item) => item.term);
+        setHistory(termsOnly);
+      } else {
+        setHistory([]);
+      }
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setPin('');
+    setHistory([]);
   };
 
   if (!isAuthenticated) {
@@ -42,8 +67,23 @@ export default function ParentToolsScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>👨‍👩‍👧 Parent Tools</Text>
-      <Text style={styles.content}>Here you can view search history, adjust filters, or block keywords (coming soon!).</Text>
-      {/* Add real tools here in future updates */}
+      <Text style={styles.subHeader}>📜 Search History</Text>
+      {history.length === 0 ? (
+        <Text style={styles.empty}>No search history available.</Text>
+      ) : (
+        <FlatList
+          data={history}
+          keyExtractor={(item, index) => `${item}-${index}`}
+          renderItem={({ item }) => (
+            <View style={styles.historyItem}>
+              <Text style={styles.historyText}>🔎 {item}</Text>
+            </View>
+          )}
+        />
+      )}
+      <View style={styles.logoutButtonWrapper}>
+        <Button title="🔒 Log Out" onPress={handleLogout} color="#e63946" />
+      </View>
     </View>
   );
 }
@@ -62,6 +102,13 @@ const styles = StyleSheet.create({
     color: '#f77f00',
     textAlign: 'center',
   },
+  subHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#444',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
   input: {
     borderColor: '#ccc',
     borderWidth: 1,
@@ -71,10 +118,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 16,
   },
-  content: {
+  historyItem: {
+    backgroundColor: '#ffe5b4',
+    padding: 10,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  historyText: {
     fontSize: 16,
     color: '#333',
-    marginTop: 20,
+  },
+  empty: {
+    fontSize: 16,
+    color: '#888',
     textAlign: 'center',
+    marginTop: 30,
+  },
+  logoutButtonWrapper: {
+    marginTop: 20,
   },
 });

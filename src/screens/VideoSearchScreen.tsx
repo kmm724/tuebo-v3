@@ -11,6 +11,7 @@ import {
   Linking,
   Button,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_KEY = 'AIzaSyB84VMq1SlOqk2Ul3hL8jjtXW5nR54cRXo'; // Replace with your real key
 
@@ -23,21 +24,49 @@ export default function VideoSearchScreen() {
     Keyboard.dismiss();
 
     try {
+      // Save search term to history
+      const existing = await AsyncStorage.getItem('searchHistory');
+      const parsed = existing ? JSON.parse(existing) : [];
+      const newHistory = [{ term: searchQuery }, ...parsed].slice(0, 10);
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(newHistory));
+    } catch (error) {
+      console.error('Failed to save search history:', error);
+    }
+
+    try {
       const ytRes = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
           searchQuery
         )}&type=video&maxResults=6&key=${API_KEY}`
       );
       const ytData = await ytRes.json();
-      const ytVideos = ytData.items?.map((item) => ({
-        title: item.snippet.title,
-        link: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-        thumbnail: item.snippet.thumbnails?.high?.url || '',
-      })) || [];
+
+      if (!Array.isArray(ytData.items)) {
+        console.warn('Unexpected API response:', ytData);
+        setVideos([]);
+        return;
+      }
+
+      const ytVideos = ytData.items.map((item) => {
+        const videoId = item.id?.videoId;
+        const title = item.snippet?.title;
+        const thumbnail = item.snippet?.thumbnails?.high?.url;
+
+        if (videoId && title && thumbnail) {
+          return {
+            title,
+            link: `https://www.youtube.com/watch?v=${videoId}`,
+            thumbnail,
+          };
+        } else {
+          return null;
+        }
+      }).filter(Boolean);
 
       setVideos(ytVideos);
     } catch (err) {
       console.error('Video search error', err);
+      setVideos([]);
     }
   };
 
